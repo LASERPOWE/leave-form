@@ -1,202 +1,125 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Leave Application Form</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f2f5;
-      padding: 20px;
-    }
-    .form-container {
-      background: white;
-      max-width: 600px;
-      margin: auto;
-      padding: 20px;
-      box-shadow: 0 0 10px #ccc;
-      border-radius: 10px;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 12px;
-      box-sizing: border-box;
-    }
-    label {
-      font-weight: bold;
-    }
-    input[readonly] {
-      background-color: #f0f0f0;
-    }
-    .readonly-box {
-      background: #eee;
-      padding: 10px;
-      margin-bottom: 12px;
-    }
-    button {
-      padding: 10px;
-      background: green;
-      color: white;
-      border: none;
-      cursor: pointer;
-      width: 100%;
-    }
-    #error {
-      color: red;
-      font-weight: bold;
-    }
+    body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; background: #f5f5f5; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, select, textarea, button { width: 100%; padding: 8px; margin-top: 5px; }
+    .readonly-box { background: #eee; padding: 10px; margin: 10px 0; }
+    #error { color: red; font-weight: bold; }
+    button { background: #28a745; color: white; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
-  <div class="form-container">
-    <h2>Leave Application Form</h2>
-    <form id="FORM ENTRY">
-      <label>EMP_CODE</label>
-      <input type="text" name="emp_code" id="emp_code" required>
+  <h2>Leave Application Form</h2>
 
-      <button type="button" onclick="fetchDetails()">Fetch Details</button>
+  <form id="leaveForm">
+    <label>EMP_CODE</label>
+    <input type="text" id="emp_code" required />
 
-      <label>EMP_NAME</label>
-      <input type="text" name="emp_name" id="emp_name" readonly>
+    <label>EMP_CATG_NAME</label>
+    <input type="text" id="emp_catg_name" readonly />
 
-      <label>DESIG_NAME</label>
-      <input type="text" name="desig_name" id="desig_name" readonly>
+    <label>EMP_NAME</label>
+    <input type="text" id="emp_name" readonly />
 
-      <label>DEPT_NAME</label>
-      <input type="text" name="dept_name" id="dept_name" readonly>
+    <label>DESIG_NAME</label>
+    <input type="text" id="desig_name" readonly />
 
-      <label>HOD</label>
-      <input type="text" name="hod" id="hod" readonly>
+    <label>DEPT_NAME</label>
+    <input type="text" id="dept_name" readonly />
 
-      <label>HOD MAIL</label>
-      <input type="text" name="hod_mail" id="hod_mail" readonly>
+    <label>HOD</label>
+    <input type="text" id="hod" readonly />
 
-      <label>LEAVE TYPE</label>
-      <select name="leave_type" id="leave_type" required>
-        <option value="CL">CL</option>
-        <option value="SL">SL</option>
-        <option value="COFF">COFF</option>
-      </select>
+    <label>HOD MAIL</label>
+    <input type="email" id="hod_mail" readonly />
 
-      <div class="readonly-box">
-        <strong>CL:</strong> <span id="cl_balance">0</span> |
-        <strong>SL:</strong> <span id="sl_balance">0</span> |
-        <strong>COFF:</strong> <span id="coff_balance">0</span><br>
-        <strong>Total:</strong> <span id="total_balance">0</span>
-      </div>
+    <label>LEAVE TYPE</label>
+    <select id="leave_type" required>
+      <option value="CL">CL</option>
+      <option value="SL">SL</option>
+      <option value="COFF">COFF</option>
+    </select>
 
-      <label>FROM DATE</label>
-      <input type="date" name="from_date" id="from_date" required>
+    <div class="readonly-box">
+      <strong>CL Balance:</strong> <span id="cl_balance">-</span><br>
+      <strong>SL Balance:</strong> <span id="sl_balance">-</span><br>
+      <strong>COFF Balance:</strong> <span id="coff_balance">-</span><br>
+      <strong>Total Balance:</strong> <span id="total_balance">-</span>
+    </div>
 
-      <label>TO DATE</label>
-      <input type="date" name="to_date" id="to_date" required>
+    <label>FROM DATE</label>
+    <input type="date" id="from_date" required />
 
-      <label>REASON</label>
-      <textarea name="reason" required></textarea>
+    <label>TO DATE</label>
+    <input type="date" id="to_date" required />
 
-      <label>TAKEN LEAVE COUNT</label>
-      <input type="number" name="leave_count" id="leave_count" readonly>
+    <label>REASON</label>
+    <textarea id="reason" rows="3" required></textarea>
 
-      <div id="error"></div>
+    <label>TAKEN LEAVE COUNT</label>
+    <input type="text" id="taken_leave_count" readonly />
+    <div id="error"></div>
 
-      <label>USER MAIL</label>
-      <input type="email" name="user_mail" required>
+    <label>USER MAIL</label>
+    <input type="email" id="user_mail" required />
 
-      <button type="submit">Submit Leave Request</button>
-    </form>
-  </div>
+    <button type="submit">Submit</button>
+    <p id="status"></p>
+  </form>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycby4fCr8tZTN63ypNxGUeparjkR8BhAYwNRde_LaZ-7XafTPKABGWagdEza8YoPOrrWuUA/exec";
+    const API_URL = 'https://script.google.com/macros/s/AKfycby4fCr8tZTN63ypNxGUeparjkR8BhAYwNRde_LaZ-7XafTPKABGWagdEza8YoPOrrWuUA/exec';
+    let leaveBalances = {};
 
-    let balances = { CL: 0, SL: 0, COFF: 0 };
+    document.getElementById('emp_code').addEventListener('blur', async () => {
+      const code = emp_code.value.trim();
+      if (!code) return;
+      const res = await fetch(`${API_URL}?action=getEmployeeDetails&emp_code=${encodeURIComponent(code)}`);
+      const data = await res.json();
+      if (data.error) return alert(data.error);
+      Object.assign(leaveBalances, {
+        CL: Number(data.CL), SL: Number(data.SL), COFF: Number(data.COFF)
+      });
+      emp_catg_name.value = data.EMP_CATG_NAME;
+      emp_name.value = data.EMP_NAME;
+      desig_name.value = data.DESIG_NAME;
+      dept_name.value = data.DEPT_NAME;
+      hod.value = data.HOD;
+      hod_mail.value = data.HOD_MAIL;
+      cl_balance.textContent = data.CL;
+      sl_balance.textContent = data.SL;
+      coff_balance.textContent = data.COFF;
+      total_balance.textContent = data.TOTAL;
+    });
 
-    function fetchDetails() {
-      const empCode = document.getElementById("emp_code").value.trim();
-      if (!empCode) return alert("Enter EMP_CODE");
-
-      fetch(scriptURL + "?emp_code=" + empCode)
-        .then(res => res.json())
-        .then(data => {
-          if (data.found && data.employees.length > 0) {
-            const emp = data.employees[0];
-            document.getElementById("emp_name").value = emp.emp_name || "";
-            document.getElementById("desig_name").value = emp.desig_name || "";
-            document.getElementById("dept_name").value = emp.dept_name || "";
-            document.getElementById("hod").value = emp.hod || "";
-            document.getElementById("hod_mail").value = emp.hod_mail || "";
-
-            balances = {
-              CL: parseInt(emp.cl || 0),
-              SL: parseInt(emp.sl || 0),
-              COFF: parseInt(emp.coff || 0)
-            };
-
-            document.getElementById("cl_balance").innerText = balances.CL;
-            document.getElementById("sl_balance").innerText = balances.SL;
-            document.getElementById("coff_balance").innerText = balances.COFF;
-            document.getElementById("total_balance").innerText =
-              balances.CL + balances.SL + balances.COFF;
-
-          } else {
-            alert("No data found for this EMP_CODE");
-          }
-        }).catch(err => {
-          console.error(err);
-          alert("Error fetching data.");
-        });
-    }
-
-    function calculateDays() {
-      const from = new Date(document.getElementById("from_date").value);
-      const to = new Date(document.getElementById("to_date").value);
-      const errorDiv = document.getElementById("error");
-      const leaveCountInput = document.getElementById("leave_count");
-
-      if (!isNaN(from) && !isNaN(to)) {
-        if (to < from) {
-          errorDiv.innerText = "TO DATE cannot be before FROM DATE";
-          leaveCountInput.value = "";
-        } else {
-          const days = Math.floor((to - from) / (1000 * 60 * 60 * 24)) + 1;
-          leaveCountInput.value = days;
-          errorDiv.innerText = "";
-        }
+    const calc = () => {
+      const from = new Date(from_date.value), to = new Date(to_date.value);
+      if (from && to && to >= from) {
+        const days = Math.ceil((to - from)/(86400000)) + 1;
+        taken_leave_count.value = days;
+        const type = leave_type.value;
+        const bal = leaveBalances[type] || 0;
+        error.textContent = days > bal ? `Insufficient ${type} balance (max ${bal})` : '';
       }
-    }
+    };
+    [from_date, to_date, leave_type].forEach(e => e.addEventListener('change', calc));
 
-    document.getElementById("from_date").addEventListener("change", calculateDays);
-    document.getElementById("to_date").addEventListener("change", calculateDays);
-
-    document.getElementById("FORM ENTRY").addEventListener("submit", function (e) {
+    leaveForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-
-      const errorText = document.getElementById("error").innerText;
-      if (errorText) {
-        alert("Fix errors before submitting");
-        return;
+      if (error.textContent) return alert(error.textContent);
+      const payload = new FormData();
+      for (let id of ['emp_code','emp_catg_name','emp_name','desig_name','dept_name','hod','hod_mail','leave_type','from_date','to_date','reason','taken_leave_count','user_mail']) {
+        payload.append(id, document.getElementById(id).value);
       }
-
-      const formData = new FormData(this);
-
-      fetch(scriptURL, {
-        method: "POST",
-        body: formData
-      })
-        .then(res => res.text())
-        .then(response => {
-          alert("Submitted successfully!");
-          document.getElementById("FORM ENTRY").reset();
-          document.getElementById("cl_balance").innerText = 0;
-          document.getElementById("sl_balance").innerText = 0;
-          document.getElementById("coff_balance").innerText = 0;
-          document.getElementById("total_balance").innerText = 0;
-          document.getElementById("leave_count").value = "";
-        })
-        .catch(err => {
-          console.error("Submit error:", err);
-          alert("Error submitting form.");
-        });
+      const res = await fetch(API_URL, { method: 'POST', body: payload });
+      const text = await res.text();
+      status.textContent = text;
+      leaveForm.reset(); cl_balance.textContent=sl_balance.textContent=coff_balance.textContent=total_balance.textContent='-';
     });
   </script>
 </body>
