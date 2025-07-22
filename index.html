@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Leave Application Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: url('https://laserpowerinfra.com/frontassets/front/images/final-loader.gif') no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 0;
+    }
+    .form-container {
+      max-width: 600px;
+      background-color: rgba(255,255,255,0.95);
+      margin: 30px auto;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    label {
+      display: block;
+      margin: 8px 0 4px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 12px;
+    }
+    input[readonly] {
+      background-color: #f0f0f0;
+    }
+    button {
+      background-color: #0066cc;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #004a99;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Leave Application Form</h2>
+    <form id="leaveForm">
+      <label>EMP_CODE:</label>
+      <input type="text" id="emp_code" name="emp_code" required />
+      <button type="button" onclick="fetchEmployee()">Fetch Details</button>
+
+      <label>EMP_NAME:</label>
+      <select id="emp_name" name="emp_name" required></select>
+
+      <label>EMP_CATG_NAME:</label>
+      <input type="text" id="emp_catg_name" name="emp_catg_name" readonly />
+
+      <label>DESIG_NAME:</label>
+      <input type="text" id="desig_name" name="desig_name" readonly />
+
+      <label>DEPT_NAME:</label>
+      <input type="text" id="dept_name" name="dept_name" readonly />
+
+      <label>HOD:</label>
+      <input type="text" id="hod" name="hod" readonly />
+
+      <label>HOD MAIL:</label>
+      <input type="email" id="hod_mail" name="hod_mail" readonly />
+
+      <label>LEAVE TYPE:</label>
+      <select id="leave_type" name="leave_type" required>
+        <option value="">--Select--</option>
+        <option value="CL">CL</option>
+        <option value="SL">SL</option>
+        <option value="COFF">COFF</option>
+      </select>
+
+      <label>FROM DATE:</label>
+      <input type="date" id="from_date" name="from_date" required onchange="calculateLeave()" />
+
+      <label>TO DATE:</label>
+      <input type="date" id="to_date" name="to_date" required onchange="calculateLeave()" min="" />
+
+      <label>TAKEN LEAVE COUNT:</label>
+      <input type="number" id="leave_count" name="leave_count" readonly />
+
+      <label>REASON:</label>
+      <textarea id="reason" name="reason" required></textarea>
+
+      <label>USER MAIL:</label>
+      <input type="email" id="user_mail" name="user_mail" required />
+
+      <button type="submit">Submit</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdjqCbrzUcZuki_MsUv0vffYXpyfy1si2hrMf0tAubitSQ4HbWld1gPPRL2oXDgK_Y/exec";
+    let employeeData = [];
+
+    function fetchEmployee() {
+      const code = document.getElementById("emp_code").value.trim();
+      if (!code) return alert("Please enter EMP_CODE");
+
+      fetch(`${SCRIPT_URL}?emp_code=${code}`)
+        .then(res => res.json())
+        .then(data => {
+          const empSelect = document.getElementById("emp_name");
+          empSelect.innerHTML = "";
+
+          if (!data.found) {
+            alert("No record found");
+            return;
+          }
+
+          employeeData = data.employees;
+
+          data.employees.forEach((emp, i) => {
+            const option = document.createElement("option");
+            option.value = emp.emp_name;
+            option.textContent = emp.emp_name;
+            if (i === 0) option.selected = true;
+            empSelect.appendChild(option);
+          });
+
+          fillFields(data.employees[0]);
+        })
+        .catch(() => alert("Failed to fetch employee data."));
+    }
+
+    document.getElementById("emp_name").addEventListener("change", function() {
+      const selected = this.value;
+      const emp = employeeData.find(e => e.emp_name === selected);
+      if (emp) fillFields(emp);
+    });
+
+    function fillFields(emp) {
+      document.getElementById("emp_catg_name").value = emp.emp_catg_name || "";
+      document.getElementById("desig_name").value = emp.desig_name || "";
+      document.getElementById("dept_name").value = emp.dept_name || "";
+      document.getElementById("hod").value = emp.hod || "";
+      document.getElementById("hod_mail").value = emp.hod_mail || "";
+    }
+
+    function calculateLeave() {
+      const from = new Date(document.getElementById("from_date").value);
+      const to = new Date(document.getElementById("to_date").value);
+      document.getElementById("to_date").setAttribute("min", document.getElementById("from_date").value);
+
+      if (from && to && to >= from) {
+        const diff = Math.floor((to - from) / (1000 * 60 * 60 * 24)) + 1;
+        document.getElementById("leave_count").value = diff;
+      } else {
+        document.getElementById("leave_count").value = "";
+      }
+    }
+
+    document.getElementById("leaveForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const formData = Object.fromEntries(new FormData(this).entries());
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(formData),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+        .then(res => res.text())
+        .then(msg => {
+          document.getElementById("message").textContent = msg;
+          if (msg.toLowerCase().includes("success")) {
+            document.getElementById("leaveForm").reset();
+            document.getElementById("emp_name").innerHTML = "";
+          }
+        })
+        .catch(() => {
+          document.getElementById("message").textContent = "Submission failed.";
+        });
+    });
+  </script>
+</body>
+</html>
