@@ -6,41 +6,66 @@
   <title>Leave Application Form</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: url('https://laserpowerinfra.com/frontassets/front/images/final-loader.gif') no-repeat center center fixed;
-      background-size: cover;
       margin: 0;
       padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+      background-attachment: fixed;
     }
     .form-container {
       max-width: 600px;
-      background-color: rgba(255,255,255,0.95);
-      margin: 30px auto;
-      padding: 20px;
-      border-radius: 10px;
+      background-color: #ffffffee;
+      margin: 40px auto;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
     }
     label {
       display: block;
       margin: 8px 0 4px;
-      font-weight: bold;
+      font-weight: 600;
     }
     input, select, textarea {
       width: 100%;
-      padding: 8px;
-      margin-bottom: 12px;
+      padding: 10px;
+      margin-bottom: 14px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 15px;
     }
     input[readonly] {
-      background-color: #f0f0f0;
+      background-color: #f9f9f9;
     }
     button {
-      background-color: #0066cc;
+      background-color: #007bff;
       color: white;
-      padding: 10px 20px;
+      padding: 12px;
+      width: 100%;
       border: none;
+      border-radius: 6px;
+      font-size: 16px;
       cursor: pointer;
+      transition: background 0.3s;
     }
     button:hover {
-      background-color: #004a99;
+      background-color: #0056b3;
+    }
+    #message {
+      text-align: center;
+      font-weight: bold;
+      margin-top: 15px;
+      color: red;
+    }
+    @media screen and (max-width: 600px) {
+      .form-container {
+        margin: 10px;
+        padding: 20px;
+      }
     }
   </style>
 </head>
@@ -71,7 +96,7 @@
       <input type="email" id="hod_mail" name="hod_mail" readonly />
 
       <label>LEAVE TYPE:</label>
-      <select id="leave_type" name="leave_type" required>
+      <select id="leave_type" name="leave_type" required onchange="calculateLeave()">
         <option value="">--Select--</option>
         <option value="CL">CL</option>
         <option value="SL">SL</option>
@@ -82,10 +107,10 @@
       <input type="date" id="from_date" name="from_date" required onchange="calculateLeave()" />
 
       <label>TO DATE:</label>
-      <input type="date" id="to_date" name="to_date" required onchange="calculateLeave()" min="" />
+      <input type="date" id="to_date" name="to_date" required onchange="calculateLeave()" />
 
       <label>TAKEN LEAVE COUNT:</label>
-      <input type="number" id="leave_count" name="leave_count" readonly />
+      <input type="text" id="leave_count" name="leave_count" readonly />
 
       <label>REASON:</label>
       <textarea id="reason" name="reason" required></textarea>
@@ -99,7 +124,7 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdjqCbrzUcZuki_MsUv0vffYXpyfy1si2hrMf0tAubitSQ4HbWld1gPPRL2oXDgK_Y/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwG0pwuYeAPODOBVsHQYP03l9y2YOAD6ku0pcMfSpH9vc7Sj7LlIFPybiXduTX0Onhp7Q/exec";
     let employeeData = [];
 
     function fetchEmployee() {
@@ -128,11 +153,11 @@
           });
 
           fillFields(data.employees[0]);
-        })
-        .catch(() => alert("Failed to fetch employee data."));
+          calculateLeave();
+        });
     }
 
-    document.getElementById("emp_name").addEventListener("change", function() {
+    document.getElementById("emp_name").addEventListener("change", function () {
       const selected = this.value;
       const emp = employeeData.find(e => e.emp_name === selected);
       if (emp) fillFields(emp);
@@ -144,24 +169,40 @@
       document.getElementById("dept_name").value = emp.dept_name || "";
       document.getElementById("hod").value = emp.hod || "";
       document.getElementById("hod_mail").value = emp.hod_mail || "";
+      calculateLeave();
     }
 
     function calculateLeave() {
       const from = new Date(document.getElementById("from_date").value);
       const to = new Date(document.getElementById("to_date").value);
-      document.getElementById("to_date").setAttribute("min", document.getElementById("from_date").value);
+      const leaveType = document.getElementById("leave_type").value;
+      const leaveCountInput = document.getElementById("leave_count");
+      document.getElementById("to_date").min = document.getElementById("from_date").value;
 
       if (from && to && to >= from) {
         const diff = Math.floor((to - from) / (1000 * 60 * 60 * 24)) + 1;
-        document.getElementById("leave_count").value = diff;
+        leaveCountInput.value = diff;
+
+        const selectedEmp = employeeData.find(e => e.emp_name === document.getElementById("emp_name").value);
+        if (selectedEmp && leaveType && selectedEmp[leaveType.toLowerCase()]) {
+          const balance = parseInt(selectedEmp[leaveType.toLowerCase()]);
+          if (diff > balance) {
+            leaveCountInput.value = `Insufficient leave (${diff} > ${balance})`;
+          }
+        }
       } else {
-        document.getElementById("leave_count").value = "";
+        leaveCountInput.value = "";
       }
     }
 
-    document.getElementById("leaveForm").addEventListener("submit", function(e) {
+    document.getElementById("leaveForm").addEventListener("submit", function (e) {
       e.preventDefault();
       const formData = Object.fromEntries(new FormData(this).entries());
+
+      if (formData.leave_count.includes("Insufficient")) {
+        document.getElementById("message").textContent = "Cannot submit: insufficient leave.";
+        return;
+      }
 
       fetch(SCRIPT_URL, {
         method: "POST",
