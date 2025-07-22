@@ -2,172 +2,137 @@
 <html>
 <head>
   <title>Leave Application Form</title>
+  <meta charset="UTF-8" />
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: auto;
-      padding: 20px;
+      font-family: Arial;
+      margin: 20px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 6px;
+      margin: 6px 0;
     }
     label {
       font-weight: bold;
+      display: block;
+      margin-top: 10px;
     }
-    input, select, textarea {
-      width: 100%;
-      margin-bottom: 10px;
-      padding: 8px;
-      box-sizing: border-box;
+    button {
+      padding: 10px 20px;
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 20px;
     }
-    .readonly {
-      background-color: #f1f1f1;
-    }
-    .balance-box {
-      background: #f9f9f9;
-      padding: 10px;
-      margin: 15px 0;
-      border: 1px solid #ccc;
+    button:hover {
+      background-color: #0d47a1;
     }
   </style>
 </head>
 <body>
+
   <h2>Leave Application Form</h2>
+
   <form id="leaveForm">
-    <label>EMP_CODE</label>
-    <input type="text" id="emp_code" name="emp_code" required />
+    <label>EMP_CODE (Enter manually)</label>
+    <input type="text" name="emp_code" id="emp_code" onblur="fetchEmployeeDetails()" required />
 
-    <label>EMP_CATG_NAME</label>
-    <input type="text" id="emp_catg_name" name="emp_catg_name" class="readonly" readonly />
+    <label>Employee Name</label>
+    <input type="text" name="emp_name" id="emp_name" readonly required />
 
-    <label>EMP_NAME</label>
-    <input type="text" id="emp_name" name="emp_name" class="readonly" readonly />
+    <label>Employee Category</label>
+    <input type="text" name="emp_catg_name" id="emp_catg_name" readonly required />
 
-    <label>HOD</label>
-    <input type="text" id="hod" name="hod" class="readonly" readonly />
+    <label>Designation</label>
+    <input type="text" name="desig_name" id="desig_name" readonly required />
 
-    <label>DESIG_NAME</label>
-    <input type="text" id="desig_name" name="desig_name" class="readonly" readonly />
+    <label>Department</label>
+    <input type="text" name="dept_name" id="dept_name" readonly required />
 
-    <label>DEPT_NAME</label>
-    <input type="text" id="dept_name" name="dept_name" class="readonly" readonly />
+    <label>HOD Name</label>
+    <input type="text" name="hod" id="hod" readonly required />
 
-    <label>LEAVE TYPE</label>
-    <select id="leave_type" name="leave_type" required>
-      <option value="">Select Leave Type</option>
-      <option value="CL">CL</option>
-      <option value="SL">SL</option>
-      <option value="COFF">COFF</option>
-    </select>
+    <label>HOD Email</label>
+    <input type="email" name="hod_mail" id="hod_mail" readonly required />
 
-    <label>FROM DATE</label>
-    <input type="date" id="from_date" name="from_date" required />
-
-    <label>TO DATE</label>
-    <input type="date" id="to_date" name="to_date" required />
-
-    <label>REASON</label>
-    <textarea id="reason" name="reason" required></textarea>
-
-    <label>TAKEN LEAVE COUNT</label>
-    <input type="number" id="taken_leave_count" name="taken_leave_count" min="1" required />
-
-    <label>USER MAIL</label>
-    <input type="email" id="user_mail" name="user_mail" required />
-
-    <label>HOD MAIL ID</label>
-    <input type="text" id="hod_mail" name="hod_mail" class="readonly" readonly />
-
-    <div class="balance-box">
-      <p><strong>CL:</strong> <span id="cl_balance">-</span></p>
-      <p><strong>SL:</strong> <span id="sl_balance">-</span></p>
-      <p><strong>COFF:</strong> <span id="coff_balance">-</span></p>
-      <p><strong>Total Balance:</strong> <span id="total_balance">-</span></p>
-      <p style="color:red;" id="error"></p>
+    <div id="leave-info" style="margin-top: 15px;">
+      <label>Leave Balances:</label>
+      <p id="leave_balances">CL: -, SL: -, COFF: -</p>
     </div>
 
-    <button type="submit">Submit</button>
+    <label>Leave Type</label>
+    <select name="leave_type" required>
+      <option value="">-- Select --</option>
+      <option value="CL">Casual Leave</option>
+      <option value="SL">Sick Leave</option>
+      <option value="COFF">Compensatory Off</option>
+    </select>
+
+    <label>From Date</label>
+    <input type="date" name="from_date" required />
+
+    <label>To Date</label>
+    <input type="date" name="to_date" required />
+
+    <label>Reason</label>
+    <textarea name="reason" required></textarea>
+
+    <button type="submit">Submit Application</button>
   </form>
 
   <script>
-    const webAppUrl = "https://script.google.com/macros/s/AKfycby4fCr8tZTN63ypNxGUeparjkR8BhAYwNRde_LaZ-7XafTPKABGWagdEza8YoPOrrWuUA/exec"; // Replace this with your deployed Apps Script Web App URL
-    let leaveBalances = { CL: 0, SL: 0, COFF: 0 };
+    const webAppUrl = "https://script.google.com/macros/s/AKfycby4fCr8tZTN63ypNxGUeparjkR8BhAYwNRde_LaZ-7XafTPKABGWagdEza8YoPOrrWuUA/exec";
 
-    document.getElementById('emp_code').addEventListener('blur', () => {
-      const empCode = document.getElementById('emp_code').value.trim();
+    function fetchEmployeeDetails() {
+      const empCode = document.getElementById("emp_code").value.trim();
+
       if (!empCode) return;
 
       fetch(`${webAppUrl}?emp_code=${empCode}`)
         .then(res => res.json())
         .then(data => {
-          if (data && !data.error) {
-            document.getElementById('emp_name').value = data.emp_name;
-            document.getElementById('emp_catg_name').value = data.emp_catg_name;
-            document.getElementById('desig_name').value = data.desig_name;
-            document.getElementById('dept_name').value = data.dept_name;
-            document.getElementById('hod').value = data.hod;
-            document.getElementById('hod_mail').value = data.hod_mail;
+          if (data.found && data.employees.length > 0) {
+            const emp = data.employees[0];
+            document.getElementById("emp_name").value = emp.emp_name || "";
+            document.getElementById("emp_catg_name").value = emp.emp_catg_name || "";
+            document.getElementById("desig_name").value = emp.desig_name || "";
+            document.getElementById("dept_name").value = emp.dept_name || "";
+            document.getElementById("hod").value = emp.hod || "";
+            document.getElementById("hod_mail").value = emp.hod_mail || "";
 
-            leaveBalances = {
-              CL: parseInt(data.cl || 0),
-              SL: parseInt(data.sl || 0),
-              COFF: parseInt(data.coff || 0)
-            };
-
-            document.getElementById('cl_balance').innerText = leaveBalances.CL;
-            document.getElementById('sl_balance').innerText = leaveBalances.SL;
-            document.getElementById('coff_balance').innerText = leaveBalances.COFF;
-            document.getElementById('total_balance').innerText = leaveBalances.CL + leaveBalances.SL + leaveBalances.COFF;
+            document.getElementById("leave_balances").innerText = 
+              `CL: ${emp.cl}, SL: ${emp.sl}, COFF: ${emp.coff}`;
           } else {
             alert("Employee not found!");
           }
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          alert("Error fetching employee details.");
         });
-    });
-
-    document.getElementById('leave_type').addEventListener('change', validateLeave);
-    document.getElementById('taken_leave_count').addEventListener('input', validateLeave);
-
-    function validateLeave() {
-      const type = document.getElementById('leave_type').value;
-      const count = parseInt(document.getElementById('taken_leave_count').value || 0);
-      const errorDiv = document.getElementById('error');
-
-      if (!type || isNaN(count)) {
-        errorDiv.innerText = '';
-        return;
-      }
-
-      if (leaveBalances[type] < count) {
-        errorDiv.innerText = `Not enough ${type} leave balance.`;
-      } else {
-        errorDiv.innerText = '';
-      }
     }
 
     document.getElementById("leaveForm").addEventListener("submit", function (e) {
       e.preventDefault();
-      const errorText = document.getElementById("error").innerText;
-      if (errorText) {
-        alert("Cannot submit: " + errorText);
-        return;
-      }
 
-      const formData = Object.fromEntries(new FormData(this).entries());
+      const form = e.target;
+      const formData = new FormData(form);
 
       fetch(webAppUrl, {
         method: "POST",
-        body: JSON.stringify(formData),
-        headers: {
-          "Content-Type": "application/json"
-        }
+        body: formData
       })
         .then(res => res.text())
-        .then(msg => {
-          alert("Form submitted successfully!");
-          document.getElementById("leaveForm").reset();
-          document.getElementById("cl_balance").innerText = "-";
-          document.getElementById("sl_balance").innerText = "-";
-          document.getElementById("coff_balance").innerText = "-";
-          document.getElementById("total_balance").innerText = "-";
-          document.getElementById("error").innerText = "";
+        .then(response => {
+          alert("Leave Application Submitted Successfully!");
+          form.reset();
+          document.getElementById("leave_balances").innerText = "CL: -, SL: -, COFF: -";
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          alert("Submission failed!");
         });
     });
   </script>
