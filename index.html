@@ -1,228 +1,167 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Leave Application Form</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
-      background-attachment: fixed;
-    }
-    .form-container {
-      max-width: 600px;
-      background-color: #ffffffee;
-      margin: 40px auto;
-      padding: 25px;
-      border-radius: 15px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    }
-    h2 {
-      text-align: center;
-      color: #333;
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      margin: 8px 0 4px;
-      font-weight: 600;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 14px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 15px;
-    }
-    input[readonly] {
-      background-color: #f9f9f9;
-    }
-    button {
-      background-color: #007bff;
-      color: white;
-      padding: 12px;
-      width: 100%;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    #message {
-      text-align: center;
-      font-weight: bold;
-      margin-top: 15px;
-      color: red;
-    }
-    @media screen and (max-width: 600px) {
-      .form-container {
-        margin: 10px;
+<html>
+  <head>
+    <base target="_top">
+    <title>Leave Application Form</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
         padding: 20px;
       }
-    }
-  </style>
-</head>
-<body>
-  <div class="form-container">
+      label {
+        font-weight: bold;
+      }
+      input, select, textarea {
+        width: 100%;
+        padding: 6px;
+        margin: 8px 0;
+      }
+      .form-section {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-top: 20px;
+        border-radius: 6px;
+      }
+      .btn {
+        padding: 10px 20px;
+        background-color: #4285f4;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
     <h2>Leave Application Form</h2>
-    <form id="leaveForm">
-      <label>EMP_CODE:</label>
-      <input type="text" id="emp_code" name="emp_code" required />
-      <button type="button" onclick="fetchEmployee()">Fetch Details</button>
 
-      <label>EMP_NAME:</label>
-      <select id="emp_name" name="emp_name" required></select>
+    <label>Enter EMP_CODE:</label>
+    <input type="text" id="empCodeInput" placeholder="Enter Employee Code">
+    <button class="btn" onclick="fetchEmployee()">Fetch Details</button>
 
-      <label>EMP_CATG_NAME:</label>
-      <input type="text" id="emp_catg_name" name="emp_catg_name" readonly />
+    <div id="empDetails" class="form-section" style="display:none;">
+      <label>Employee Name:</label>
+      <select id="empNameDropdown" onchange="selectEmployee()"></select>
 
-      <label>DESIG_NAME:</label>
-      <input type="text" id="desig_name" name="desig_name" readonly />
+      <div id="empInfo"></div>
 
-      <label>DEPT_NAME:</label>
-      <input type="text" id="dept_name" name="dept_name" readonly />
+      <form id="leaveForm" onsubmit="submitForm(event)">
+        <label>Leave Type:</label>
+        <select id="leaveType" required>
+          <option value="">-- Select Leave Type --</option>
+          <option value="CL">CL</option>
+          <option value="SL">SL</option>
+          <option value="COFF">COFF</option>
+        </select>
 
-      <label>HOD:</label>
-      <input type="text" id="hod" name="hod" readonly />
+        <label>From Date:</label>
+        <input type="date" id="fromDate" required>
 
-      <label>HOD MAIL:</label>
-      <input type="email" id="hod_mail" name="hod_mail" readonly />
+        <label>To Date:</label>
+        <input type="date" id="toDate" required>
 
-      <label>LEAVE TYPE:</label>
-      <select id="leave_type" name="leave_type" required onchange="calculateLeave()">
-        <option value="">--Select--</option>
-        <option value="CL">CL</option>
-        <option value="SL">SL</option>
-        <option value="COFF">COFF</option>
-      </select>
+        <label>Reason:</label>
+        <textarea id="reason" rows="3" required></textarea>
 
-      <label>FROM DATE:</label>
-      <input type="date" id="from_date" name="from_date" required onchange="calculateLeave()" />
+        <button class="btn" type="submit">Submit Leave Request</button>
+      </form>
+    </div>
 
-      <label>TO DATE:</label>
-      <input type="date" id="to_date" name="to_date" required onchange="calculateLeave()" />
-
-      <label>TAKEN LEAVE COUNT:</label>
-      <input type="text" id="leave_count" name="leave_count" readonly />
-
-      <label>REASON:</label>
-      <textarea id="reason" name="reason" required></textarea>
-
-      <label>USER MAIL:</label>
-      <input type="email" id="user_mail" name="user_mail" required />
-
-      <button type="submit">Submit</button>
-    </form>
     <div id="message"></div>
-  </div>
 
-  <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwG0pwuYeAPODOBVsHQYP03l9y2YOAD6ku0pcMfSpH9vc7Sj7LlIFPybiXduTX0Onhp7Q/exec";
-    let employeeData = [];
+    <script>
+      let allEmployees = [];
 
-    function fetchEmployee() {
-      const code = document.getElementById("emp_code").value.trim();
-      if (!code) return alert("Please enter EMP_CODE");
+      function fetchEmployee() {
+        const empCode = document.getElementById('empCodeInput').value.trim();
+        if (!empCode) {
+          alert("Please enter EMP_CODE");
+          return;
+        }
 
-      fetch(`${SCRIPT_URL}?emp_code=${code}`)
-        .then(res => res.json())
-        .then(data => {
-          const empSelect = document.getElementById("emp_name");
-          empSelect.innerHTML = "";
-
-          if (!data.found) {
-            alert("No record found");
-            return;
-          }
-
-          employeeData = data.employees;
-
-          data.employees.forEach((emp, i) => {
-            const option = document.createElement("option");
-            option.value = emp.emp_name;
-            option.textContent = emp.emp_name;
-            if (i === 0) option.selected = true;
-            empSelect.appendChild(option);
+        fetch(`https://script.google.com/macros/s/AKfycbzXnp6T-4kAZifHS5tZIYsTKfJozb9OdCQvUdsS3RJuENgwPwuQm8SwuAx_R3rl-aq6gw/exec?emp_code=${empCode}`)
+          .then(res => res.json())
+          .then(data => {
+            if (!data.found) {
+              alert("Employee not found");
+              return;
+            }
+            allEmployees = data.employees;
+            populateDropdown();
+            document.getElementById('empDetails').style.display = 'block';
+          })
+          .catch(err => {
+            console.error(err);
+            alert("Failed to fetch data");
           });
+      }
 
-          fillFields(data.employees[0]);
-          calculateLeave();
+      function populateDropdown() {
+        const dropdown = document.getElementById("empNameDropdown");
+        dropdown.innerHTML = "";
+        allEmployees.forEach((emp, index) => {
+          const opt = document.createElement("option");
+          opt.value = index;
+          opt.textContent = emp.emp_name;
+          dropdown.appendChild(opt);
         });
-    }
-
-    document.getElementById("emp_name").addEventListener("change", function () {
-      const selected = this.value;
-      const emp = employeeData.find(e => e.emp_name === selected);
-      if (emp) fillFields(emp);
-    });
-
-    function fillFields(emp) {
-      document.getElementById("emp_catg_name").value = emp.emp_catg_name || "";
-      document.getElementById("desig_name").value = emp.desig_name || "";
-      document.getElementById("dept_name").value = emp.dept_name || "";
-      document.getElementById("hod").value = emp.hod || "";
-      document.getElementById("hod_mail").value = emp.hod_mail || "";
-      calculateLeave();
-    }
-
-    function calculateLeave() {
-      const from = new Date(document.getElementById("from_date").value);
-      const to = new Date(document.getElementById("to_date").value);
-      const leaveType = document.getElementById("leave_type").value;
-      const leaveCountInput = document.getElementById("leave_count");
-      document.getElementById("to_date").min = document.getElementById("from_date").value;
-
-      if (from && to && to >= from) {
-        const diff = Math.floor((to - from) / (1000 * 60 * 60 * 24)) + 1;
-        leaveCountInput.value = diff;
-
-        const selectedEmp = employeeData.find(e => e.emp_name === document.getElementById("emp_name").value);
-        if (selectedEmp && leaveType && selectedEmp[leaveType.toLowerCase()]) {
-          const balance = parseInt(selectedEmp[leaveType.toLowerCase()]);
-          if (diff > balance) {
-            leaveCountInput.value = `Insufficient leave (${diff} > ${balance})`;
-          }
-        }
-      } else {
-        leaveCountInput.value = "";
-      }
-    }
-
-    document.getElementById("leaveForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const formData = Object.fromEntries(new FormData(this).entries());
-
-      if (formData.leave_count.includes("Insufficient")) {
-        document.getElementById("message").textContent = "Cannot submit: insufficient leave.";
-        return;
+        selectEmployee();
       }
 
-      fetch(SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify(formData),
-        headers: {
-          "Content-Type": "application/json"
-        }
-      })
+      function selectEmployee() {
+        const selected = allEmployees[document.getElementById("empNameDropdown").value];
+        const infoDiv = document.getElementById("empInfo");
+        infoDiv.innerHTML = `
+          <p><b>Category:</b> ${selected.emp_catg_name}</p>
+          <p><b>Designation:</b> ${selected.desig_name}</p>
+          <p><b>Department:</b> ${selected.dept_name}</p>
+          <p><b>HOD:</b> ${selected.hod}</p>
+          <p><b>CL:</b> ${selected.cl} | <b>SL:</b> ${selected.sl} | <b>COFF:</b> ${selected.coff}</p>
+          <p><b>Total:</b> ${selected.total_leave} | <b>Balance:</b> ${selected.balance}</p>
+        `;
+      }
+
+      function submitForm(e) {
+        e.preventDefault();
+        const selected = allEmployees[document.getElementById("empNameDropdown").value];
+
+        const payload = {
+          emp_code: selected.emp_code,
+          emp_catg_name: selected.emp_catg_name,
+          emp_name: selected.emp_name,
+          hod: selected.hod,
+          desig_name: selected.desig_name,
+          dept_name: selected.dept_name,
+          leave_type: document.getElementById("leaveType").value,
+          from_date: document.getElementById("fromDate").value,
+          to_date: document.getElementById("toDate").value,
+          reason: document.getElementById("reason").value,
+          leave_count: calculateLeaveDays(),
+          hod_mail: selected.hod_mail,
+          user_mail: selected.user_mail || "" // optional
+        };
+
+        fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec", {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: { "Content-Type": "application/json" }
+        })
         .then(res => res.text())
         .then(msg => {
-          document.getElementById("message").textContent = msg;
-          if (msg.toLowerCase().includes("success")) {
-            document.getElementById("leaveForm").reset();
-            document.getElementById("emp_name").innerHTML = "";
-          }
+          document.getElementById("message").innerHTML = `<p><b>${msg}</b></p>`;
+          document.getElementById("leaveForm").reset();
         })
-        .catch(() => {
-          document.getElementById("message").textContent = "Submission failed.";
+        .catch(err => {
+          console.error(err);
+          document.getElementById("message").innerHTML = `<p style="color:red;"><b>Submission failed.</b></p>`;
         });
-    });
-  </script>
-</body>
+      }
+
+      function calculateLeaveDays() {
+        const from = new Date(document.getElementById("fromDate").value);
+        const to = new Date(document.getElementById("toDate").value);
+        const diff = (to - from) / (1000 * 3600 * 24) + 1;
+        return diff > 0 ? diff : 0;
+      }
+    </script>
+  </body>
 </html>
