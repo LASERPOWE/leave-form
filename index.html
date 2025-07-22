@@ -1,48 +1,47 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Leave Application Form</title>
   <meta charset="UTF-8">
+  <title>Leave Application Form</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f2f2f2;
       padding: 20px;
+      background: #f2f2f2;
     }
     .form-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
       max-width: 600px;
       margin: auto;
-      background: #fff;
-      padding: 30px;
-      border-radius: 10px;
       box-shadow: 0 0 10px #ccc;
     }
     input, select, textarea {
       width: 100%;
-      padding: 10px;
       margin-bottom: 12px;
+      padding: 10px;
       box-sizing: border-box;
     }
     label {
       font-weight: bold;
     }
     .readonly-box {
-      background: #f0f0f0;
+      background: #eee;
       padding: 10px;
-      margin-bottom: 15px;
-      line-height: 1.6;
-    }
-    #error {
-      color: red;
-      font-weight: bold;
+      margin-bottom: 10px;
     }
     button {
       padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      background: #28a745;
+      background: green;
       color: white;
       border: none;
+      cursor: pointer;
+    }
+    #message {
+      font-weight: bold;
+      color: red;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -51,111 +50,85 @@
     <h2>Leave Application Form</h2>
     <form id="leaveForm">
       <label>EMP_CODE</label>
-      <input type="text" id="emp_code" name="emp_code" required>
+      <input type="text" name="emp_code" required>
 
       <label>EMP_NAME</label>
-      <input type="text" id="emp_name" name="emp_name" readonly>
+      <input type="text" name="emp_name" required>
+
+      <label>EMP_CATEGORY</label>
+      <input type="text" name="emp_catg_name" required>
 
       <label>DESIG_NAME</label>
-      <input type="text" id="desig_name" name="desig_name" readonly>
+      <input type="text" name="desig_name" required>
 
       <label>DEPT_NAME</label>
-      <input type="text" id="dept_name" name="dept_name" readonly>
+      <input type="text" name="dept_name" required>
 
       <label>HOD</label>
-      <input type="text" id="hod" name="hod" readonly>
+      <input type="text" name="hod" required>
 
       <label>HOD MAIL</label>
-      <input type="text" id="hod_mail" name="hod_mail" readonly>
+      <input type="email" name="hod_mail" required>
 
       <label>LEAVE TYPE</label>
-      <select name="leave_type" id="leave_type" required>
+      <select name="leave_type" required>
         <option value="CL">CL</option>
         <option value="SL">SL</option>
         <option value="COFF">COFF</option>
       </select>
 
       <div class="readonly-box">
-        <strong>CL:</strong> <span id="cl_balance">5</span> |
-        <strong>SL:</strong> <span id="sl_balance">10</span> |
-        <strong>COFF:</strong> <span id="coff_balance">0</span><br>
-        <strong>Total:</strong> <span id="total_balance">15</span>
+        CL: 5 | SL: 10 | COFF: 0<br>
+        Total: 15
       </div>
 
       <label>FROM DATE</label>
-      <input type="date" id="from_date" name="from_date" required>
+      <input type="date" name="from_date" required>
 
       <label>TO DATE</label>
-      <input type="date" id="to_date" name="to_date" required>
+      <input type="date" name="to_date" required>
 
       <label>REASON</label>
       <textarea name="reason" required></textarea>
 
       <label>TAKEN LEAVE COUNT</label>
-      <input type="number" id="leave_count" name="leave_count" readonly>
-
-      <div id="error"></div>
+      <input type="number" name="leave_count" required>
 
       <label>USER MAIL</label>
       <input type="email" name="user_mail" required>
 
       <button type="submit">Submit Leave Request</button>
     </form>
+
+    <div id="message"></div>
   </div>
 
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycby4fCr8tZTN63ypNxGUeparjkR8BhAYwNRde_LaZ-7XafTPKABGWagdEza8YoPOrrWuUA/exec';
-
-    document.getElementById('from_date').addEventListener('change', calculateLeaveDays);
-    document.getElementById('to_date').addEventListener('change', calculateLeaveDays);
-    document.getElementById('leave_type').addEventListener('change', calculateLeaveDays);
-
-    function calculateLeaveDays() {
-      const from = new Date(document.getElementById('from_date').value);
-      const to = new Date(document.getElementById('to_date').value);
-      const errorDiv = document.getElementById('error');
-
-      if (from && to) {
-        if (to < from) {
-          errorDiv.innerText = 'TO DATE cannot be earlier than FROM DATE.';
-          document.getElementById('leave_count').value = '';
-          return;
-        }
-        const days = Math.floor((to - from) / (1000 * 60 * 60 * 24)) + 1;
-        document.getElementById('leave_count').value = days;
-        errorDiv.innerText = '';
-      }
-    }
-
-    document.getElementById('leaveForm').addEventListener('submit', async function(e) {
+    document.getElementById("leaveForm").addEventListener("submit", function(e) {
       e.preventDefault();
-      const errorText = document.getElementById('error').innerText;
-      if (errorText) {
-        alert("Cannot submit: " + errorText);
-        return;
-      }
 
-      const formData = new FormData(this);
-      const plainData = Object.fromEntries(formData.entries());
+      const form = e.target;
+      const formData = new FormData(form);
+      const data = {};
+      formData.forEach((value, key) => data[key] = value);
 
-      try {
-        const response = await fetch(scriptURL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(plainData)
-        });
-
-        const text = await response.text();
-        if (text.includes("Success")) {
-          alert("Form submitted successfully.");
-          document.getElementById("leaveForm").reset();
-          document.getElementById("leave_count").value = '';
-        } else {
-          throw new Error(text);
-        }
-      } catch (err) {
-        alert("Error submitting form: " + err.message);
-      }
+      fetch("https://script.google.com/macros/s/AKfycby4fCr8tZTN63ypNxGUeparjkR8BhAYwNRde_LaZ-7XafTPKABGWagdEza8YoPOrrWuUA/exec", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        mode: "no-cors"  // Prevents CORS error; response can't be read
+      })
+      .then(() => {
+        document.getElementById("message").style.color = "green";
+        document.getElementById("message").innerText = "Leave submitted successfully!";
+        form.reset();
+      })
+      .catch((error) => {
+        document.getElementById("message").innerText = "Error submitting form.";
+        console.error(error);
+      });
     });
   </script>
 </body>
