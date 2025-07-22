@@ -50,7 +50,7 @@
 <body>
   <div class="form-container">
     <h2>Leave Application Form</h2>
-    <form id="leaveForm">
+    <form id="FORM ENTRY">
       <label>EMP_CODE</label>
       <input type="text" name="emp_code" id="emp_code" required>
 
@@ -168,7 +168,7 @@
     document.getElementById("from_date").addEventListener("change", calculateDays);
     document.getElementById("to_date").addEventListener("change", calculateDays);
 
-    document.getElementById("leaveForm").addEventListener("submit", function (e) {
+    document.getElementById("FORM ENTRY").addEventListener("submit", function (e) {
       e.preventDefault();
 
       const errorText = document.getElementById("error").innerText;
@@ -186,7 +186,7 @@
         .then(res => res.text())
         .then(response => {
           alert("Submitted successfully!");
-          document.getElementById("leaveForm").reset();
+          document.getElementById("FORM ENTRY").reset();
           document.getElementById("cl_balance").innerText = 0;
           document.getElementById("sl_balance").innerText = 0;
           document.getElementById("coff_balance").innerText = 0;
