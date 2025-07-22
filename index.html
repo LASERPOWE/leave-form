@@ -1,125 +1,174 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Leave Application Form</title>
   <style>
-    body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; background: #f5f5f5; }
-    label { display: block; margin-top: 10px; font-weight: bold; }
-    input, select, textarea, button { width: 100%; padding: 8px; margin-top: 5px; }
-    .readonly-box { background: #eee; padding: 10px; margin: 10px 0; }
-    #error { color: red; font-weight: bold; }
-    button { background: #28a745; color: white; border: none; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    .readonly {
+      background-color: #f1f1f1;
+    }
+    .balance-box {
+      background: #f9f9f9;
+      padding: 10px;
+      margin: 15px 0;
+      border: 1px solid #ccc;
+    }
   </style>
 </head>
 <body>
   <h2>Leave Application Form</h2>
-
   <form id="leaveForm">
     <label>EMP_CODE</label>
-    <input type="text" id="emp_code" required />
+    <input type="text" id="emp_code" name="emp_code" required />
 
     <label>EMP_CATG_NAME</label>
-    <input type="text" id="emp_catg_name" readonly />
+    <input type="text" id="emp_catg_name" name="emp_catg_name" class="readonly" readonly />
 
     <label>EMP_NAME</label>
-    <input type="text" id="emp_name" readonly />
-
-    <label>DESIG_NAME</label>
-    <input type="text" id="desig_name" readonly />
-
-    <label>DEPT_NAME</label>
-    <input type="text" id="dept_name" readonly />
+    <input type="text" id="emp_name" name="emp_name" class="readonly" readonly />
 
     <label>HOD</label>
-    <input type="text" id="hod" readonly />
+    <input type="text" id="hod" name="hod" class="readonly" readonly />
 
-    <label>HOD MAIL</label>
-    <input type="email" id="hod_mail" readonly />
+    <label>DESIG_NAME</label>
+    <input type="text" id="desig_name" name="desig_name" class="readonly" readonly />
+
+    <label>DEPT_NAME</label>
+    <input type="text" id="dept_name" name="dept_name" class="readonly" readonly />
 
     <label>LEAVE TYPE</label>
-    <select id="leave_type" required>
+    <select id="leave_type" name="leave_type" required>
+      <option value="">Select Leave Type</option>
       <option value="CL">CL</option>
       <option value="SL">SL</option>
       <option value="COFF">COFF</option>
     </select>
 
-    <div class="readonly-box">
-      <strong>CL Balance:</strong> <span id="cl_balance">-</span><br>
-      <strong>SL Balance:</strong> <span id="sl_balance">-</span><br>
-      <strong>COFF Balance:</strong> <span id="coff_balance">-</span><br>
-      <strong>Total Balance:</strong> <span id="total_balance">-</span>
-    </div>
-
     <label>FROM DATE</label>
-    <input type="date" id="from_date" required />
+    <input type="date" id="from_date" name="from_date" required />
 
     <label>TO DATE</label>
-    <input type="date" id="to_date" required />
+    <input type="date" id="to_date" name="to_date" required />
 
     <label>REASON</label>
-    <textarea id="reason" rows="3" required></textarea>
+    <textarea id="reason" name="reason" required></textarea>
 
     <label>TAKEN LEAVE COUNT</label>
-    <input type="text" id="taken_leave_count" readonly />
-    <div id="error"></div>
+    <input type="number" id="taken_leave_count" name="taken_leave_count" min="1" required />
 
     <label>USER MAIL</label>
-    <input type="email" id="user_mail" required />
+    <input type="email" id="user_mail" name="user_mail" required />
+
+    <label>HOD MAIL ID</label>
+    <input type="text" id="hod_mail" name="hod_mail" class="readonly" readonly />
+
+    <div class="balance-box">
+      <p><strong>CL:</strong> <span id="cl_balance">-</span></p>
+      <p><strong>SL:</strong> <span id="sl_balance">-</span></p>
+      <p><strong>COFF:</strong> <span id="coff_balance">-</span></p>
+      <p><strong>Total Balance:</strong> <span id="total_balance">-</span></p>
+      <p style="color:red;" id="error"></p>
+    </div>
 
     <button type="submit">Submit</button>
-    <p id="status"></p>
   </form>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycby4fCr8tZTN63ypNxGUeparjkR8BhAYwNRde_LaZ-7XafTPKABGWagdEza8YoPOrrWuUA/exec';
-    let leaveBalances = {};
+    const webAppUrl = "https://script.google.com/macros/s/AKfycby4fCr8tZTN63ypNxGUeparjkR8BhAYwNRde_LaZ-7XafTPKABGWagdEza8YoPOrrWuUA/exec"; // Replace this with your deployed Apps Script Web App URL
+    let leaveBalances = { CL: 0, SL: 0, COFF: 0 };
 
-    document.getElementById('emp_code').addEventListener('blur', async () => {
-      const code = emp_code.value.trim();
-      if (!code) return;
-      const res = await fetch(`${API_URL}?action=getEmployeeDetails&emp_code=${encodeURIComponent(code)}`);
-      const data = await res.json();
-      if (data.error) return alert(data.error);
-      Object.assign(leaveBalances, {
-        CL: Number(data.CL), SL: Number(data.SL), COFF: Number(data.COFF)
-      });
-      emp_catg_name.value = data.EMP_CATG_NAME;
-      emp_name.value = data.EMP_NAME;
-      desig_name.value = data.DESIG_NAME;
-      dept_name.value = data.DEPT_NAME;
-      hod.value = data.HOD;
-      hod_mail.value = data.HOD_MAIL;
-      cl_balance.textContent = data.CL;
-      sl_balance.textContent = data.SL;
-      coff_balance.textContent = data.COFF;
-      total_balance.textContent = data.TOTAL;
+    document.getElementById('emp_code').addEventListener('blur', () => {
+      const empCode = document.getElementById('emp_code').value.trim();
+      if (!empCode) return;
+
+      fetch(`${webAppUrl}?emp_code=${empCode}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && !data.error) {
+            document.getElementById('emp_name').value = data.emp_name;
+            document.getElementById('emp_catg_name').value = data.emp_catg_name;
+            document.getElementById('desig_name').value = data.desig_name;
+            document.getElementById('dept_name').value = data.dept_name;
+            document.getElementById('hod').value = data.hod;
+            document.getElementById('hod_mail').value = data.hod_mail;
+
+            leaveBalances = {
+              CL: parseInt(data.cl || 0),
+              SL: parseInt(data.sl || 0),
+              COFF: parseInt(data.coff || 0)
+            };
+
+            document.getElementById('cl_balance').innerText = leaveBalances.CL;
+            document.getElementById('sl_balance').innerText = leaveBalances.SL;
+            document.getElementById('coff_balance').innerText = leaveBalances.COFF;
+            document.getElementById('total_balance').innerText = leaveBalances.CL + leaveBalances.SL + leaveBalances.COFF;
+          } else {
+            alert("Employee not found!");
+          }
+        });
     });
 
-    const calc = () => {
-      const from = new Date(from_date.value), to = new Date(to_date.value);
-      if (from && to && to >= from) {
-        const days = Math.ceil((to - from)/(86400000)) + 1;
-        taken_leave_count.value = days;
-        const type = leave_type.value;
-        const bal = leaveBalances[type] || 0;
-        error.textContent = days > bal ? `Insufficient ${type} balance (max ${bal})` : '';
-      }
-    };
-    [from_date, to_date, leave_type].forEach(e => e.addEventListener('change', calc));
+    document.getElementById('leave_type').addEventListener('change', validateLeave);
+    document.getElementById('taken_leave_count').addEventListener('input', validateLeave);
 
-    leaveForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (error.textContent) return alert(error.textContent);
-      const payload = new FormData();
-      for (let id of ['emp_code','emp_catg_name','emp_name','desig_name','dept_name','hod','hod_mail','leave_type','from_date','to_date','reason','taken_leave_count','user_mail']) {
-        payload.append(id, document.getElementById(id).value);
+    function validateLeave() {
+      const type = document.getElementById('leave_type').value;
+      const count = parseInt(document.getElementById('taken_leave_count').value || 0);
+      const errorDiv = document.getElementById('error');
+
+      if (!type || isNaN(count)) {
+        errorDiv.innerText = '';
+        return;
       }
-      const res = await fetch(API_URL, { method: 'POST', body: payload });
-      const text = await res.text();
-      status.textContent = text;
-      leaveForm.reset(); cl_balance.textContent=sl_balance.textContent=coff_balance.textContent=total_balance.textContent='-';
+
+      if (leaveBalances[type] < count) {
+        errorDiv.innerText = `Not enough ${type} leave balance.`;
+      } else {
+        errorDiv.innerText = '';
+      }
+    }
+
+    document.getElementById("leaveForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const errorText = document.getElementById("error").innerText;
+      if (errorText) {
+        alert("Cannot submit: " + errorText);
+        return;
+      }
+
+      const formData = Object.fromEntries(new FormData(this).entries());
+
+      fetch(webAppUrl, {
+        method: "POST",
+        body: JSON.stringify(formData),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+        .then(res => res.text())
+        .then(msg => {
+          alert("Form submitted successfully!");
+          document.getElementById("leaveForm").reset();
+          document.getElementById("cl_balance").innerText = "-";
+          document.getElementById("sl_balance").innerText = "-";
+          document.getElementById("coff_balance").innerText = "-";
+          document.getElementById("total_balance").innerText = "-";
+          document.getElementById("error").innerText = "";
+        });
     });
   </script>
 </body>
